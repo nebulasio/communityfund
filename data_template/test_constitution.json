@@ -1,0 +1,33 @@
+{
+  "data": {
+    "type": "update-constitution",
+    "content": {
+      "version": "0",
+      "approvalConditions": {
+        "updateConstitution": {
+          "proportion": "1"
+        },
+        "addSigner": {
+          "proportion": "1"
+        },
+        "removeSigner": {
+          "min": -1
+        },
+        "replaceSigner": {
+          "min": -1
+        },
+        "transfer": [
+          {
+            "startValue": "0",
+            "endValue": "INFINITY",
+            "condition": {
+              "proportion": "1"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "value": 1,
+  "sig": "xxxx"
+}

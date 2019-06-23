@@ -1,0 +1,10 @@
+{
+  "data": {
+    "type": "remove-signer",
+    "content": {
+      "address": "n1xxxx"
+    }
+  },
+  "value": 1,
+  "sig": "xxxx"
+}

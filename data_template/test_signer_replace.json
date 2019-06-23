@@ -1,0 +1,11 @@
+{
+  "data": {
+    "type": "replace-signer",
+    "content": {
+      "oldAddress": "n1xxxx",
+      "newAddress": "n1xxxx"
+    }
+  },
+  "value": 1,
+  "sig": "xxxx"
+}

@@ -1,0 +1,38 @@
+{
+  "signers": [
+    "n1xxx",
+    "n1yyy"
+  ],
+  "constitution": {
+    "version": "1",
+    "approvalConditions": {
+      "updateConstitution": {
+        "proportion": "1"
+      },
+      "addSigner": {
+        "proportion": "1"
+      },
+      "removeSigner": {
+        "min": -1
+      },
+      "replaceSigner": {
+        "min": -1
+      },
+      "vote": {
+        "proportion": "1"
+      },
+      "updateContracts": {
+        "proportion": "1"
+      },
+      "transfer": [
+        {
+          "startValue": "0",
+          "endValue": "INFINITY",
+          "condition": {
+            "proportion": "1"
+          }
+        }
+      ]
+    }
+  }
+}

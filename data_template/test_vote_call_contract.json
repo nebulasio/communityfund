@@ -1,0 +1,21 @@
+{
+  "data": {
+    "type": "call",
+    "content": {
+      "subject": "subject",
+      "description": "description",
+    },
+    "action": {
+      "name": "callContract",
+      "detail": [
+        {
+          "contract": "n1xxx",
+          "func": "f",
+          "args": []
+        }
+      ]
+    }
+  },
+  "value": 1,
+  "sig": "xxxx"
+}

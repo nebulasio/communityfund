@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MultiSign Test</title>
+    <script type="text/javascript" src="libs/bs58.js"></script>
+    <script type="text/javascript" src="libs/nebulas.js"></script>
+    <script type="text/javascript" src="libs/neblocal.js"></script>
+    <script type="text/javascript" src="neb_helper.js"></script>
+    <script type="text/javascript" src="../ms_contract.js"></script>
+
+    <script type="text/javascript">
+        localStorage.clear();
+        let nebHelper = new NebHelper();
+
+        let msAddress = "n1zUNqeBPvsyrw5zxp9mKcDdLTjuaEL7s39";
+
+        let signer1 = nebHelper.accountFromPrivateKey("8c1fb593569bf37f6ef570204a28692dd8a891c4b39b79798e438ae29f96eb9f");
+        let signer2 = nebHelper.accountFromPrivateKey("1f8f258b8c969bd5ab5a5e7a2eda99f6391cab0e9e9044f6a8c35786af74f142");
+        let signer3 = nebHelper.accountFromPrivateKey("38aab0058e99d0bcc725f3fafa8a8e0b6f3ee595bbcbcc06ba7b527296fe1289");
+        let newSigner1 = nebHelper.accountFromPrivateKey("cc363eb0ad161421659c4259bf4bfddc941489c28d3b9f9d8d95d235a89f4a01");
+        let newSigner2 = nebHelper.accountFromPrivateKey("7b18f6ce433839706c642943478fcc558fa9f75a26de0fab009207c567f79426");
+
+        let sender = "n1LJuxRULaTUNHGjGQSfnBNjSixqXyvuPU4";
+
+
+        let allSigners = [signer1, signer2, signer3, newSigner1, newSigner2];
+
+        let unit = new BigNumber(10).pow(18);
+
+        function balance(address) {
+            return BlockchainTool.getBalance(address).div(unit).toString(10);
+        }
+
+        function log(space, data) {
+            data = "" + data;
+            let array = data.split("\n");
+            let prefix = "";
+            for (let i = 0; i < space; ++i) {
+                prefix += " ";
+            }
+            for (let i = 0; i < array.length; ++i) {
+                console.log(prefix + array[i]);
+            }
+        }
+
+        function signersFromAddresses(addresses) {
+            let r = [];
+            for (let i in addresses) {
+                let a = addresses[i];
+                for (let j in allSigners) {
+                    if (allSigners[j].getAddressString() === a) {
+                        r.push(allSigners[j]);
+                    }
+                }
+            }
+            return r;
+        }
+
+        // Init --------------------------------------------------------------------------------------------------------
+
+        function initContext() {
+            BlockchainTool.transfer(null, sender, new BigNumber(1000).mul(unit));
+            BlockchainTool.transfer(null, msAddress, new BigNumber(1000).mul(unit));
+            BlockchainTool.registerContract(msAddress, MultiSign);
+        }
+
+        function initContractTest() {
+            let constitution = {
+                "version": "0",
+                "approvalConditions": {
+                    "updateConstitution": {
+                        "proportion": "1"
+                    },
+                    "addSigner": {
+                        "proportion": "1"
+                    },
+                    "removeSigner": {
+                        "min": -1
+                    },
+                    "replaceSigner": {
+                        "min": -1
+                    },
+                    "transfer": [
+                        {
+                            "startValue": "0",
+                            "endValue": "INFINITY",
+                            "condition": {
+                                "proportion": "1"
+                            }
+                        }
+                    ]
+                }
+            };
+            let ss = [];
+            let signers = [signer1, signer2, signer3];
+            for (let i in signers) {
+                ss.push(signers[i].getAddressString());
+            }
+            log(0, "default constitution: " + JSON.stringify(constitution));
+            log(0, "default signers: " + JSON.stringify(ss));
+            BlockchainTool.callContract(sender, msAddress, 0, "init", [constitution, ss]);
+        }
+
+
+        // Test --------------------------------------------------------------------------------------------------------
+
+        function getCurrentSigners() {
+            let addresses = Array.from(BlockchainTool.callContract(sender, msAddress, 0, "getSigners", []));
+            return signersFromAddresses(addresses);
+        }
+
+        function printSignerLog() {
+            let r = BlockchainTool.callContract(sender, msAddress, 0, "getSignerUpdateLogs", []);
+            log(0, "signer log: " + JSON.stringify(r));
+        }
+
+        function addSignerTest() {
+            log(0, "----------------------------\naddSignerTest");
+            let signers = getCurrentSigners();
+            for (let i in signers) {
+                let s = signers[i];
+                let cmd = {
+                    "data": {
+                        "type": "add-signer",
+                        "content": {
+                            "address": newSigner1.getAddressString()
+                        }
+                    },
+                    "value": 1,
+                };
+                let hash = nebHelper.getHash(cmd.data, cmd.value);
+                cmd.sig = nebHelper.sign(hash, s);
+                BlockchainTool.callContract(sender, msAddress, 0, "vote", [cmd]);
+            }
+            printSignerLog();
+        }
+
+        function removeSignerTest() {
+            log(0, "----------------------------\nremoveSignerTest");
+            let signers = getCurrentSigners();
+            let rs = signers.splice(0, 1);
+            for (let i in signers) {
+                let s = signers[i];
+                let cmd = {
+                    "data": {
+                        "type": "remove-signer",
+                        "content": {
+                            "address": rs[0].getAddressString()
+                        }
+                    },
+                    "value": 1,
+                };
+                let hash = nebHelper.getHash(cmd.data, cmd.value);
+                cmd.sig = nebHelper.sign(hash, s);
+                BlockchainTool.callContract(sender, msAddress, 0, "vote", [cmd]);
+            }
+            printSignerLog();
+        }
+
+        function replaceSignerTest() {
+            log(0, "----------------------------\nreplaceSignerTest");
+            let signers = getCurrentSigners();
+            // let rs = signers.splice(0, 1);
+            let value = 1;
+            for (let i in signers) {
+                let s = signers[i];
+                let cmd = {
+                    "data": {
+                        "type": "replace-signer",
+                        "content": {
+                            "oldAddress": signers[0].getAddressString(),
+                            "newAddress": newSigner2.getAddressString()
+                        }
+                    },
+                    "value": value,
+                };
+                value = 2;
+                let hash = nebHelper.getHash(cmd.data, cmd.value);
+                cmd.sig = nebHelper.sign(hash, s);
+                BlockchainTool.callContract(sender, msAddress, 0, "vote", [cmd]);
+            }
+            printSignerLog();
+        }
+
+        function printConstitutionLog() {
+            let r = BlockchainTool.callContract(signer1, msAddress, 0, "getConstitutionUpdateLogs", []);
+            log(0, "constitution log: " + JSON.stringify(r));
+        }
+
+        function updateConstitutionTest() {
+            log(0, "----------------------------\nupdateConstitutionTest");
+            let constitution = {
+                "version": "1",
+                "approvalConditions": {
+                    "updateConstitution": {
+                        "proportion": "1"
+                    },
+                    "addSigner": {
+                        "proportion": "1"
+                    },
+                    "removeSigner": {
+                        "min": -1
+                    },
+                    "replaceSigner": {
+                        "min": -1
+                    },
+                    "transfer": [
+                        {
+                            "startValue": "0",
+                            "endValue": "100",
+                            "condition": {
+                                "min": "-1"
+                            }
+                        },
+                        {
+                            "startValue": "100",
+                            "endValue": "INFINITY",
+                            "condition": {
+                                "proportion": "1"
+                            }
+                        }
+                    ]
+                }
+            };
+            let signers = getCurrentSigners();
+            for (let i in signers) {
+                let s = signers[i];
+                let cmd = {
+                    "data": {
+                        "type": "update-constitution",
+                        "content": constitution
+                    },
+                    "value": 1,
+                };
+                let hash = nebHelper.getHash(cmd.data, cmd.value);
+                cmd.sig = nebHelper.sign(hash, s);
+                BlockchainTool.callContract(sender, msAddress, 0, "vote", [cmd]);
+            }
+            printConstitutionLog();
+        }
+
+        function transferTest() {
+            let data = {
+                "type": "transfer",
+                "content": {
+                    "subject": "subject",
+                    "description": "description"
+                },
+                "action": {
+                    "name": "transfer",
+                    "detail": [
+                        {
+                            "to": signer1.getAddressString(),
+                            "value": "101.2",
+                            "note": "test transfer"
+                        }
+                    ]
+                }
+            };
+            let signers = getCurrentSigners();
+            signers = [signers[0]];
+            for (let i in signers) {
+                let s = signers[i];
+                let cmd = {
+                    "data": data,
+                    "value": 1,
+                };
+                let hash = nebHelper.getHash(cmd.data, cmd.value);
+                cmd.sig = nebHelper.sign(hash, s);
+                BlockchainTool.callContract(sender, msAddress, 0, "vote", [cmd]);
+            }
+            log(0, "balance:" + balance("n1aZcgrqWPhK4hqsTkxoZvtu431RjJkWQ6T"));
+            log(0, "contract balance:" + balance(msAddress));
+        }
+
+        function printFinishedVotes() {
+            let r = BlockchainTool.callContract(signer1, msAddress, 0, "getFinishedIndexes", []);
+            log(0, "finished indexes: " + JSON.stringify(r));
+            r = BlockchainTool.callContract(signer1, msAddress, 0, "getFinished", [0]);
+            log(0, "finished votes: " + JSON.stringify(r));
+        }
+
+        function printUnfinishedVotes() {
+            let r = BlockchainTool.callContract(signer1, msAddress, 0, "getUnfinished", []);
+            log(0, "unfinished votes: " + JSON.stringify(r));
+        }
+
+
+        // Main --------------------------------------------------------------------------------------------------------
+
+        function main() {
+            initContext();
+            initContractTest();
+
+            // addSignerTest();
+            // removeSignerTest();
+            // replaceSignerTest();
+            //
+            // updateConstitutionTest();
+
+            transferTest();
+
+            printFinishedVotes();
+            printUnfinishedVotes();
+        }
+
+        main();
+    </script>
+</head>
+
+<body>
+</body>
+</html>

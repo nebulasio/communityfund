@@ -1,0 +1,21 @@
+{
+  "data": {
+    "type": "transfer",
+    "content": {
+      "subject": "subject",
+      "description": "description"
+    },
+    "action": {
+      "name": "transfer",
+      "detail": [
+        {
+          "to": "n1xxx",
+          "value": "1.01",
+          "note": ""
+        }
+      ]
+    }
+  },
+  "value": 1,
+  "sig": "xxxx"
+}

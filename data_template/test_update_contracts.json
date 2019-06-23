@@ -1,0 +1,24 @@
+{
+  "data": {
+    "type": "update-contracts",
+    "content": {
+      "trustedContracts": [
+        "n1xxx"
+      ],
+      "targetContractFunctions": [
+        {
+          "id": "id1",
+          "address": "n1xxxx",
+          "func": "f",
+          "description": "function description",
+          "args": [
+            "param1 description",
+            "param2 description"
+          ]
+        }
+      ]
+    }
+  },
+  "value": 1,
+  "sig": "xxxx"
+}
